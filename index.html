@@ -19,17 +19,18 @@
   *{box-sizing:border-box; margin:0; padding:0;}
   body{
     min-height:100vh;
+    min-height:100dvh;
     background:
       radial-gradient(circle at 15% 10%, rgba(0,217,192,0.08), transparent 40%),
       radial-gradient(circle at 85% 90%, rgba(255,182,39,0.07), transparent 40%),
       var(--bg);
     color:var(--text);
     font-family:'Inter',sans-serif;
-    padding:24px;
+    padding:max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
   }
   .app{
     width:100%;
-    max-width:520px;
+    max-width:880px;
     margin:0 auto;
     padding:28px 0 12px;
   }
@@ -45,7 +46,7 @@
   }
   h1{
     font-family:'Space Grotesk',sans-serif;
-    font-size:30px;
+    font-size:clamp(28px, 4vw, 38px);
     font-weight:700;
     letter-spacing:-0.01em;
     margin-bottom:10px;
@@ -54,7 +55,7 @@
     font-size:14px;
     line-height:1.5;
     color:var(--text-dim);
-    max-width:360px;
+    max-width:420px;
     margin:0 auto;
   }
 
@@ -69,10 +70,12 @@
 
   .exercise-list{
     list-style:none;
-    display:flex;
-    flex-direction:column;
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(min(100%, 340px), 1fr));
     gap:14px;
   }
+  .exercise-list > li{ display:flex; }
+  .exercise-list > li > .card{ flex:1; }
   .card{
     display:flex;
     align-items:center;

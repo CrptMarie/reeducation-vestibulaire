@@ -16,10 +16,15 @@
     --text:#E8EDF5;
     --text-dim:#7C8AA5;
     --ring-track:#1C2A42;
+    --ring:clamp(180px, min(68vw, 30vh), 320px);
+  }
+  @supports (height:1dvh){
+    :root{ --ring:clamp(180px, min(68vw, 30dvh), 320px); }
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{
     min-height:100vh;
+    min-height:100dvh;
     background:
       radial-gradient(circle at 15% 10%, rgba(0,217,192,0.08), transparent 40%),
       radial-gradient(circle at 85% 90%, rgba(255,182,39,0.07), transparent 40%),
@@ -29,11 +34,11 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    padding:24px;
+    padding:max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
   }
   .app{
     width:100%;
-    max-width:460px;
+    max-width:560px;
   }
   .eyebrow{
     font-family:'Inter',sans-serif;
@@ -47,11 +52,11 @@
   }
   h1{
     font-family:'Space Grotesk',sans-serif;
-    font-size:28px;
+    font-size:clamp(26px, 3.4vw, 34px);
     font-weight:700;
     text-align:center;
     letter-spacing:-0.01em;
-    margin-bottom:28px;
+    margin-bottom:24px;
   }
 
   .config{
@@ -87,11 +92,16 @@
     font-size:13px;
     font-weight:600;
     padding:9px 4px;
+    min-height:40px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
     border-radius:9px;
     cursor:pointer;
     transition:all .15s ease;
     text-align:center;
   }
+  @media (pointer:coarse){ .chip{ min-height:46px; font-size:14px; } }
   .chip:hover{ border-color:var(--teal); color:var(--text); }
   .chip.active{
     background:var(--teal);
@@ -119,14 +129,15 @@
   /* --- Stage --- */
   .stage{
     position:relative;
-    width:280px;
-    height:280px;
+    flex:0 0 auto;
+    width:var(--ring);
+    height:var(--ring);
     margin:0 auto 22px;
     display:flex;
     align-items:center;
     justify-content:center;
   }
-  svg.ring{ position:absolute; inset:0; transform:rotate(-90deg); }
+  svg.ring{ position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); }
   svg.ring circle{ fill:none; }
   .ring-track{ stroke:var(--ring-track); stroke-width:6; }
   .ring-progress{
@@ -137,8 +148,8 @@
   }
   .arrow-wrap{
     position:relative;
-    width:200px;
-    height:200px;
+    width:71.4%;
+    height:71.4%;
     border-radius:50%;
     background:var(--bg-alt);
     display:flex;
@@ -249,6 +260,8 @@
   .fs-arrow-wrap{
     width:min(55vw, 55vh);
     height:min(55vw, 55vh);
+    width:min(55vw, 55dvh);
+    height:min(55vw, 55dvh);
     visibility:hidden;
   }
   .fs-arrow-shape{
@@ -264,7 +277,7 @@
   .cam-preview{
     display:block;
     width:100%;
-    height:150px;
+    height:clamp(130px, 22vh, 190px);
     object-fit:cover;
     border-radius:10px;
     background:#000;
@@ -297,10 +310,58 @@
   }
   .back-link:hover{ color:var(--teal); }
   .back-link:focus-visible{ outline:2px solid var(--teal); outline-offset:3px; border-radius:4px; }
+
+  /* --- Mise en page adaptative --- */
+  .col-stage{ display:flex; flex-direction:column; align-items:center; }
+  .col-stage .primary-btn,
+  .col-stage .hint,
+  .col-stage .done-banner{ width:100%; max-width:440px; }
+  .col-stage .primary-btn{
+    position:sticky;
+    bottom:max(12px, env(safe-area-inset-bottom));
+    z-index:5;
+    box-shadow:0 10px 28px rgba(0,0,0,0.4);
+  }
+
+  /* Écran large en paysage (iPad, ordinateur) : config à gauche, exercice à droite */
+  @media (min-width:820px) and (orientation:landscape){
+    :root{ --ring:clamp(200px, min(40vw, calc(100vh - 270px)), 440px); }
+    @supports (height:1dvh){
+      :root{ --ring:clamp(200px, min(40vw, calc(100dvh - 270px)), 440px); }
+    }
+    .app{
+      max-width:1040px;
+      display:grid;
+      grid-template-columns:minmax(340px, 440px) 1fr;
+      column-gap:56px;
+      align-items:center;
+    }
+    .col-config .eyebrow,
+    .col-config h1{ text-align:left; }
+    .config{ margin-bottom:0; }
+    .stage{ margin-bottom:18px; }
+    .stats{ margin-bottom:14px; }
+  }
+
+  /* Écran très peu haut (téléphone en paysage) : on compacte */
+  @media (max-height:480px){
+    .hint{ display:none; }
+    .eyebrow{ margin-bottom:2px; }
+    h1{ margin-bottom:14px; }
+    .back-link{ margin-bottom:10px; }
+    .config{ padding:14px 14px 10px; }
+    .config-row{ margin-bottom:10px; }
+    .stats{ margin-bottom:12px; }
+  }
+  /* Grand écran en paysage assez haut (iPad, ordinateur) : tout tient, le bouton reste à sa place */
+  @media (min-width:820px) and (orientation:landscape) and (min-height:560px){
+    .col-stage .primary-btn{ position:static; box-shadow:none; }
+  }
 </style>
 </head>
 <body>
   <div class="app">
+    <div class="col-config">
     <a class="back-link" href="index.html">← Accueil</a>
     <div class="eyebrow">Entraînement réaction</div>
     <h1>Réflexe Directionnel</h1>
@@ -363,9 +424,11 @@
         </div>
       </div>
     </div>
+    </div>
 
+    <div class="col-stage">
     <div class="stage">
-      <svg class="ring" width="280" height="280">
+      <svg class="ring" viewBox="0 0 280 280">
         <circle class="ring-track" cx="140" cy="140" r="130"></circle>
         <circle class="ring-progress" id="ringProgress" cx="140" cy="140" r="130"
                 stroke-dasharray="816.8" stroke-dashoffset="0"></circle>
@@ -391,6 +454,7 @@
 
     <button class="primary-btn" id="startBtn">Commencer</button>
     <div class="hint">Cliquez sur l'écran ou appuyez sur Échap pour arrêter</div>
+    </div>
   </div>
 
   <div class="fullscreen-stage" id="fullscreenStage">
