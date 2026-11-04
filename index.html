@@ -343,7 +343,7 @@
           </div>
           <div class="cam-note">
             Placez-vous face à l'écran, le visage bien visible. Votre position de départ est calibrée au lancement (environ 1 seconde) : regardez droit devant.
-            La flèche reste affichée jusqu'à ce que le mouvement soit détecté, puis revenez au centre ; la cadence règle la pause entre deux flèches.
+            La flèche change dès que le mouvement est détecté, ou après 6 secondes sans mouvement. La cadence n'est utilisée que sans caméra.
             L'analyse se fait dans votre navigateur, aucune image n'est envoyée.
           </div>
         </div>
@@ -480,8 +480,9 @@
     paceMax = parseFloat(chip.dataset.max);
   });
 
-  function randomDirection(){
-    const keys = Object.keys(DIRECTIONS);
+  function randomDirection(avoidRepeat){
+    let keys = Object.keys(DIRECTIONS);
+    if(avoidRepeat && lastDirection) keys = keys.filter(k => k !== lastDirection);
     const choice = keys[Math.floor(Math.random()*keys.length)];
     lastDirection = choice;
     return choice;
@@ -489,8 +490,8 @@
 
   const BLANK_MS = 150;
 
-  function displayArrow(){
-    const dir = randomDirection();
+  function displayArrow(avoidRepeat){
+    const dir = randomDirection(avoidRepeat);
     const rot = DIRECTIONS[dir];
     fsArrowWrap.style.transform = `rotate(${rot}deg)`;
     fsArrowWrap.style.visibility = 'visible';
@@ -626,11 +627,9 @@
   const YAW_THRESHOLD = 0.07;     // décalage du nez, en fraction de la largeur du visage
   const PITCH_THRESHOLD = 0.05;   // décalage du nez, en fraction de la hauteur du visage
   const CONFIRM_FRAMES = 2;       // images consécutives nécessaires pour valider un mouvement
-  const NEUTRAL_FRAMES = 3;       // images consécutives au centre pour valider le retour
   const CALIB_FRAMES = 15;        // images utilisées pour mesurer la position neutre
   const CALIB_TIMEOUT_MS = 6000;
   const RESPONSE_TIMEOUT_MS = 6000;
-  const RETURN_TIMEOUT_MS = 4000;
 
   let cameraEnabled = false;
   let cameraReady = false;
@@ -644,15 +643,13 @@
   let camToken = 0;
 
   // État de l'exercice en mode caméra
-  let phase = 'idle'; // idle | calibrating | arrow | return | pause
+  let phase = 'idle'; // idle | calibrating | arrow
   let baseline = null;
   let calibSamples = [];
   let calibTimer = null;
-  let returnTimer = null;
   let currentDir = null;
   let arrowShownAt = 0;
   let hitFrames = 0;
-  let neutralFrames = 0;
   let successes = 0;
   let misses = 0;
   let reactionTimes = [];
@@ -721,14 +718,8 @@
     return ny > 0 ? 'down' : 'up';
   }
 
-  function isNeutral(pose){
-    const { nx, ny } = normalizedDelta(pose);
-    return Math.abs(nx) < 0.5 && Math.abs(ny) < 0.5;
-  }
-
   function resetCamPhase(){
     clearTimeout(calibTimer);
-    clearTimeout(returnTimer);
     phase = 'idle';
   }
 
@@ -738,41 +729,28 @@
     doneBanner.textContent = 'Visage non détecté : placez-vous face à la caméra puis réessayez.';
   }
 
+  // Mode caméra : la flèche change immédiatement dès que le mouvement est détecté,
+  // sans écran vide ni pause. La nouvelle direction est toujours différente de la
+  // précédente, puisque la tête est déjà dans l'ancienne direction.
   function showArrowCam(){
-    currentDir = displayArrow();
+    clearTimeout(arrowTimer);
+    currentDir = displayArrow(true);
     phase = 'arrow';
     hitFrames = 0;
     arrowShownAt = performance.now();
     arrowTimer = setTimeout(onMiss, RESPONSE_TIMEOUT_MS);
   }
 
-  function endArrowCam(){
-    fsArrowWrap.style.visibility = 'hidden';
-    phase = 'return';
-    neutralFrames = 0;
-    clearTimeout(returnTimer);
-    returnTimer = setTimeout(schedulePause, RETURN_TIMEOUT_MS);
-  }
-
   function onSuccess(){
-    clearTimeout(arrowTimer);
     successes++;
     reactionTimes.push(performance.now() - arrowShownAt);
-    endArrowCam();
+    showArrowCam();
   }
 
   function onMiss(){
     if(phase !== 'arrow') return;
     misses++;
-    endArrowCam();
-  }
-
-  function schedulePause(){
-    if(phase !== 'return') return;
-    clearTimeout(returnTimer);
-    phase = 'pause';
-    const delay = BLANK_MS + (paceMin + Math.random() * (paceMax - paceMin)) * 1000;
-    arrowTimer = setTimeout(showArrowCam, delay);
+    showArrowCam();
   }
 
   function handlePose(pose){
@@ -795,13 +773,6 @@
         if(hitFrames >= CONFIRM_FRAMES) onSuccess();
       } else {
         hitFrames = 0;
-      }
-    } else if(phase === 'return'){
-      if(isNeutral(pose)){
-        neutralFrames++;
-        if(neutralFrames >= NEUTRAL_FRAMES) schedulePause();
-      } else {
-        neutralFrames = 0;
       }
     }
   }
