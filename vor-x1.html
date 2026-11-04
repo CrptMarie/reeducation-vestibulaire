@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VORx1 · stabilisation du regard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A1424;
+    --bg-alt:#0C1729;
+    --panel:#111E34;
+    --border:#23344E;
+    --border-strong:#2C4160;
+    --teal:#4FD1C5;
+    --teal-ink:#06241F;
+    --text:#E9EEF7;
+    --text-dim:#8795B0;
+    --ring-track:#1B2A44;
+    --danger:#F2877F;
+    --ring:clamp(180px, min(64vw, 28vh), 320px);
+  }
+  @supports (height:1dvh){
+    :root{ --ring:clamp(180px, min(64vw, 28dvh), 320px); }
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    min-height:100vh;
+    min-height:100dvh;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(79,209,197,0.10), transparent 42%),
+      radial-gradient(circle at 85% 90%, rgba(108,140,255,0.09), transparent 42%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+  }
+  .app{
+    width:100%;
+    max-width:560px;
+  }
+  .eyebrow{
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    color:var(--teal);
+    text-align:center;
+    margin-bottom:6px;
+  }
+  h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:clamp(26px, 3.4vw, 34px);
+    font-weight:700;
+    text-align:center;
+    letter-spacing:-0.01em;
+    margin-bottom:24px;
+  }
+
+  .config{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:18px 18px 14px;
+    margin-bottom:22px;
+  }
+  .config.disabled{ opacity:0.45; pointer-events:none; }
+  .config-row{ margin-bottom:14px; }
+  .config-row:last-child{ margin-bottom:0; }
+  .config-label{
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    margin-bottom:8px;
+    display:block;
+  }
+  .btn-group{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:6px;
+  }
+  .btn-group.two-col{ grid-template-columns:repeat(2,1fr); }
+  .chip{
+    background:var(--bg-alt);
+    border:1px solid var(--border-strong);
+    color:var(--text-dim);
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    padding:9px 4px;
+    min-height:40px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:9px;
+    cursor:pointer;
+    transition:all .15s ease;
+    text-align:center;
+  }
+  @media (pointer:coarse){ .chip{ min-height:46px; font-size:14px; } }
+  .chip:hover{ border-color:var(--teal); color:var(--text); }
+  .chip.active{
+    background:var(--teal);
+    border-color:var(--teal);
+    color:var(--teal-ink);
+  }
+  .custom-duration{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:8px;
+  }
+  .custom-duration input{
+    width:64px;
+    background:var(--bg-alt);
+    border:1px solid var(--border-strong);
+    border-radius:8px;
+    color:var(--text);
+    padding:7px 8px;
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+  }
+  .custom-duration span{ font-size:12px; color:var(--text-dim); }
+
+  /* --- Stage --- */
+  .stage{
+    position:relative;
+    flex:0 0 auto;
+    width:var(--ring);
+    height:var(--ring);
+    margin:0 auto 22px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  svg.ring{ position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); }
+  svg.ring circle{ fill:none; }
+  .ring-track{ stroke:var(--ring-track); stroke-width:6; }
+  .ring-progress{
+    stroke:var(--teal);
+    stroke-width:6;
+    stroke-linecap:round;
+    transition:stroke-dashoffset .2s linear;
+  }
+  .arrow-wrap{
+    position:relative;
+    width:71.4%;
+    height:71.4%;
+    border:none;
+    border-radius:50%;
+    background:linear-gradient(150deg, #7DE9DC 0%, #3FBFB1 100%);
+    color:var(--teal-ink);
+    font:inherit;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    cursor:pointer;
+    box-shadow:0 12px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.28);
+    transition:transform .1s ease, filter .15s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .arrow-wrap:hover{ filter:brightness(1.08); }
+  .arrow-wrap:active{ transform:scale(0.97); }
+  .arrow-wrap:focus-visible{ outline:3px solid var(--teal); outline-offset:6px; }
+  .idle-label{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:clamp(18px, calc(var(--ring) * 0.09), 28px);
+    font-weight:700;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--teal-ink);
+  }
+  .start-hint{
+    font-size:clamp(10px, calc(var(--ring) * 0.045), 13px);
+    font-weight:600;
+    line-height:1.3;
+    max-width:80%;
+    text-align:center;
+    color:rgba(6,36,31,0.72);
+  }
+
+  /* --- Stats --- */
+  .stats{
+    display:flex;
+    justify-content:center;
+    gap:28px;
+    margin-bottom:22px;
+  }
+  .stat{ text-align:center; }
+  .stat-value{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:22px;
+    font-weight:700;
+  }
+  .stat-label{
+    font-size:10px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    margin-top:2px;
+  }
+
+  .chip:focus-visible{ outline:2px solid var(--teal); outline-offset:2px; }
+
+  .done-banner{
+    text-align:center;
+    font-size:13px;
+    color:var(--teal);
+    font-weight:600;
+    margin-bottom:14px;
+    min-height:18px;
+  }
+  .hint{
+    text-align:center;
+    font-size:12px;
+    color:var(--text-dim);
+    margin-top:12px;
+  }
+
+
+  /* --- Fullscreen mode --- */
+  .fullscreen-stage{
+    position:fixed;
+    inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:100;
+    cursor:pointer;
+  }
+  .fullscreen-stage.active{ display:flex; }
+
+
+  /* --- Détection caméra --- */
+  .btn-group.three-col{ grid-template-columns:repeat(3,1fr); }
+  .cam-block{ display:none; margin-top:10px; }
+  .cam-block.visible{ display:block; }
+  .cam-preview{
+    display:block;
+    width:100%;
+    height:clamp(130px, 22vh, 190px);
+    object-fit:cover;
+    border-radius:10px;
+    background:#000;
+    transform:scaleX(-1);
+    margin-bottom:8px;
+  }
+  .cam-status{
+    font-size:12px;
+    color:var(--text-dim);
+    margin-bottom:12px;
+  }
+  .cam-status.ok{ color:var(--teal); }
+  .cam-status.err{ color:var(--danger); }
+  .cam-note{
+    font-size:11px;
+    line-height:1.45;
+    color:var(--text-dim);
+    margin-top:10px;
+  }
+  /* --- Retour à l'accueil --- */
+  .back-link{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--text-dim);
+    text-decoration:none;
+    margin-bottom:18px;
+  }
+  .back-link:hover{ color:var(--teal); }
+  .back-link:focus-visible{ outline:2px solid var(--teal); outline-offset:3px; border-radius:4px; }
+
+  /* --- Mise en page adaptative --- */
+  .col-stage{ display:flex; flex-direction:column; align-items:center; }
+  .col-stage .hint,
+  .col-stage .done-banner{ width:100%; max-width:440px; }
+
+  /* Écran large en paysage (iPad, ordinateur) : config à gauche, exercice à droite */
+  @media (min-width:820px) and (orientation:landscape){
+    :root{ --ring:clamp(200px, min(40vw, calc(100vh - 230px)), 440px); }
+    @supports (height:1dvh){
+      :root{ --ring:clamp(200px, min(40vw, calc(100dvh - 230px)), 440px); }
+    }
+    .app{
+      max-width:1040px;
+      display:grid;
+      grid-template-columns:minmax(340px, 440px) 1fr;
+      column-gap:56px;
+      align-items:center;
+    }
+    .col-config .eyebrow,
+    .col-config h1{ text-align:left; }
+    .config{ margin-bottom:0; }
+    .stage{ margin-bottom:18px; }
+    .stats{ margin-bottom:14px; }
+  }
+
+  /* Écran très peu haut (téléphone en paysage) : on compacte */
+  @media (max-height:480px){
+    .hint{ display:none; }
+    .eyebrow{ margin-bottom:2px; }
+    h1{ margin-bottom:14px; }
+    .back-link{ margin-bottom:10px; }
+    .config{ padding:14px 14px 10px; }
+    .config-row{ margin-bottom:10px; }
+    .stats{ margin-bottom:12px; }
+  }
+
+  /* --- Spécifique VORx1 --- */
+  .group-title{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:15px;
+    font-weight:700;
+    margin:18px 0 4px;
+    padding-top:16px;
+    border-top:1px solid var(--border);
+  }
+  .group-tip{
+    font-size:12px;
+    line-height:1.45;
+    color:var(--text-dim);
+    margin-bottom:14px;
+  }
+  .field-note{
+    font-size:11px;
+    line-height:1.45;
+    color:var(--text-dim);
+    margin-top:8px;
+  }
+  .config-row.is-disabled{ opacity:0.4; pointer-events:none; }
+  .instruction{
+    text-align:center;
+    font-size:14px;
+    line-height:1.5;
+    color:var(--text);
+    max-width:440px;
+    margin:0 auto 14px;
+  }
+
+  .fullscreen-stage{ overflow:hidden; }
+  .okn{
+    position:absolute;
+    inset:0;
+    display:none;
+    background-size:120px 120px;
+    animation-duration:var(--okn-dur, 1s);
+    animation-timing-function:linear;
+    animation-iteration-count:infinite;
+    pointer-events:none;
+  }
+  .okn.h{
+    display:block;
+    background-image:linear-gradient(90deg, var(--okn-color) 0 50%, transparent 50% 100%);
+    animation-name:okn-x;
+  }
+  .okn.v{
+    display:block;
+    background-image:linear-gradient(180deg, var(--okn-color) 0 50%, transparent 50% 100%);
+    animation-name:okn-y;
+  }
+  @keyframes okn-x{ from{ background-position:0 0; } to{ background-position:120px 0; } }
+  @keyframes okn-y{ from{ background-position:0 0; } to{ background-position:0 120px; } }
+  .target{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%, -50%);
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:clamp(40px, 9vmin, 120px);
+    letter-spacing:0.04em;
+    line-height:1;
+    white-space:nowrap;
+    visibility:hidden;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+
+  @media (min-width:820px) and (orientation:landscape){
+    :root{ --ring:clamp(200px, min(36vw, calc(100vh - 310px)), 400px); }
+    @supports (height:1dvh){
+      :root{ --ring:clamp(200px, min(36vw, calc(100dvh - 310px)), 400px); }
+    }
+    .app{ align-items:start; }
+    .col-stage{ position:sticky; top:8px; }
+  }
+  @media (max-height:480px){
+    .instruction{ font-size:12px; margin-bottom:8px; }
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="col-config">
+    <a class="back-link" href="index.html">← Accueil</a>
+    <div class="eyebrow">Stabilisation du regard</div>
+    <h1>VORx1</h1>
+
+    <div class="config" id="config">
+      <div class="config-row">
+        <span class="config-label">Durée de l'exercice</span>
+        <div class="btn-group" id="durationGroup">
+          <div class="chip active" data-sec="30">30 s</div>
+          <div class="chip" data-sec="60">1 min</div>
+          <div class="chip" data-sec="120">2 min</div>
+          <div class="chip" data-sec="custom">Perso</div>
+        </div>
+        <div class="custom-duration" id="customDurationRow" style="display:none;">
+          <input type="number" id="customMinutes" min="0" max="60" value="3" />
+          <span>min</span>
+          <input type="number" id="customSeconds" min="0" max="59" value="0" />
+          <span>sec</span>
+        </div>
+      </div>
+
+      <div class="config-row">
+        <span class="config-label">Mouvement de la tête</span>
+        <div class="btn-group two-col" id="axisGroup">
+          <div class="chip active" data-axis="h">Gauche – droite</div>
+          <div class="chip" data-axis="v">Haut – bas</div>
+        </div>
+      </div>
+
+      <div class="config-row">
+        <span class="config-label">Thème</span>
+        <div class="btn-group two-col" id="themeGroup">
+          <div class="chip active" data-theme="light">Noir sur blanc</div>
+          <div class="chip" data-theme="dark">Blanc sur noir</div>
+        </div>
+      </div>
+
+      <div class="group-title">Progression</div>
+      <p class="group-tip">Commencez avec un mot fixe. Ne modifiez qu’un paramètre à la fois : changez une chose, observez la réaction, puis décidez.</p>
+
+      <div class="config-row">
+        <span class="config-label">Changement du mot</span>
+        <div class="btn-group" id="intervalGroup">
+          <div class="chip active" data-ms="0">Fixe</div>
+          <div class="chip" data-ms="3000">3 s</div>
+          <div class="chip" data-ms="1500">1,5 s</div>
+          <div class="chip" data-ms="800">0,8 s</div>
+        </div>
+        <div class="field-note" id="intervalNote"></div>
+      </div>
+
+      <div class="config-row" id="positionRow">
+        <span class="config-label">Position du mot</span>
+        <div class="btn-group two-col" id="positionGroup">
+          <div class="chip active" data-pos="center">Centrée</div>
+          <div class="chip" data-pos="variable">Variable</div>
+        </div>
+        <div class="field-note" id="positionNote"></div>
+      </div>
+
+      <div class="config-row">
+        <span class="config-label">Fond en mouvement</span>
+        <div class="btn-group" id="oknGroup">
+          <div class="chip active" data-okn="off">Aucun</div>
+          <div class="chip" data-okn="slow">Lent</div>
+          <div class="chip" data-okn="mid">Moyen</div>
+          <div class="chip" data-okn="fast">Rapide</div>
+        </div>
+        <div class="field-note">Des bandes défilent derrière le mot : utile en cas de sensibilité au mouvement visuel (supermarché, foule).</div>
+      </div>
+
+      <div class="config-row">
+        <span class="config-label">VORx2 : mot opposé à la tête</span>
+        <div class="btn-group two-col" id="vorGroup">
+          <div class="chip active" data-vor="off">Désactivé</div>
+          <div class="chip" data-vor="on">Activé</div>
+        </div>
+        <div class="cam-block" id="camBlock">
+          <video class="cam-preview" id="camVideo" autoplay muted playsinline></video>
+          <div class="cam-status" id="camStatus"></div>
+          <div class="cam-note">
+            Le mot se déplace dans le sens opposé à votre tête, grâce à la caméra : placez-vous face à l'écran, le visage bien visible. Votre position de départ est calibrée au lancement (environ 1 seconde) : regardez droit devant.
+            Le mot suit votre tête avec un léger retard, c'est normal.
+            L'analyse se fait dans votre navigateur, aucune image n'est envoyée.
+          </div>
+        </div>
+      </div>
+
+      <div class="config-row">
+        <span class="config-label">Stroop : couleur de l’encre</span>
+        <div class="btn-group two-col" id="stroopGroup">
+          <div class="chip active" data-stroop="off">Désactivé</div>
+          <div class="chip" data-stroop="on">Activé</div>
+        </div>
+        <div class="field-note">Des noms de couleurs s’affichent dans une autre couleur : nommez la couleur de l’encre, pas le mot.</div>
+      </div>
+    </div>
+    </div>
+
+    <div class="col-stage">
+    <div class="stage">
+      <svg class="ring" viewBox="0 0 280 280">
+        <circle class="ring-track" cx="140" cy="140" r="130"></circle>
+        <circle class="ring-progress" id="ringProgress" cx="140" cy="140" r="130"
+                stroke-dasharray="816.8" stroke-dashoffset="0"></circle>
+      </svg>
+      <button type="button" class="arrow-wrap" id="startBtn" aria-label="Commencer l'exercice">
+        <span class="idle-label" id="idleLabel">Prêt</span>
+        <span class="start-hint">Touchez pour commencer</span>
+      </button>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value" id="timeLeft">00:30</div>
+        <div class="stat-label">Restant</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="wordCount">0</div>
+        <div class="stat-label">Mots</div>
+      </div>
+    </div>
+
+    <p class="instruction" id="instruction"></p>
+    <div class="done-banner" id="doneBanner"></div>
+
+    <div class="hint">Touchez « Prêt » pour commencer. Pour arrêter : touchez l'écran ou appuyez sur Échap.</div>
+    </div>
+  </div>
+
+  <div class="fullscreen-stage" id="fullscreenStage">
+    <div class="okn" id="okn"></div>
+    <div class="target" id="target"></div>
+  </div>
+
+<script>
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const config = $('config');
+  const durationGroup = $('durationGroup');
+  const customRow = $('customDurationRow');
+  const customMinutes = $('customMinutes');
+  const customSeconds = $('customSeconds');
+  const startBtn = $('startBtn');
+  const timeLeftEl = $('timeLeft');
+  const wordCountEl = $('wordCount');
+  const idleLabel = $('idleLabel');
+  const ringProgress = $('ringProgress');
+  const doneBanner = $('doneBanner');
+  const instructionEl = $('instruction');
+  const intervalNote = $('intervalNote');
+  const positionNote = $('positionNote');
+  const positionRow = $('positionRow');
+  const fullscreenStage = $('fullscreenStage');
+  const oknEl = $('okn');
+  const target = $('target');
+
+  const CIRC = 2 * Math.PI * 130;
+  ringProgress.setAttribute('stroke-dasharray', CIRC.toFixed(1));
+
+  /* ---------- Réglages ---------- */
+  const settings = {
+    axis: 'h',            // h = gauche–droite, v = haut–bas
+    intervalMs: 0,        // 0 = mot fixe
+    positionVariable: false,
+    okn: 'off',           // off | slow | mid | fast
+    vorx2: false,
+    stroop: false,
+    theme: 'light'
+  };
+
+  const THEME_COLORS = {
+    light: { bg: '#FFFFFF', fg: '#000000', okn: 'rgba(0,0,0,0.13)' },
+    dark:  { bg: '#000000', fg: '#FFFFFF', okn: 'rgba(255,255,255,0.17)' }
+  };
+  const OKN_SPEEDS = { slow: 60, mid: 150, fast: 280 };   // pixels par seconde
+  const OKN_PERIOD = 120;                                 // pixels (doit correspondre au CSS)
+
+  const WORDS = ['MAISON', 'TABLE', 'SOLEIL', 'JARDIN', 'CHEMIN', 'PORTE', 'FLEUR', 'NUAGE',
+                 'LIVRE', 'PLAGE', 'ARBRE', 'ROUTE', 'FENÊTRE', 'BATEAU', 'MONTAGNE', 'CUISINE'];
+  const STROOP = [
+    { name: 'ROUGE',  light: '#D32F2F', dark: '#FF5252' },
+    { name: 'BLEU',   light: '#1565C0', dark: '#4DA3FF' },
+    { name: 'VERT',   light: '#2E7D32', dark: '#4CD964' },
+    { name: 'VIOLET', light: '#6A1B9A', dark: '#C084FC' }
+  ];
+  const AUTO_INTERVAL_MS = 3000;
+
+  function effectiveInterval(){
+    if(settings.intervalMs > 0) return settings.intervalMs;
+    if(settings.stroop || (settings.positionVariable && !settings.vorx2)) return AUTO_INTERVAL_MS;
+    return 0;
+  }
+  function positionActive(){ return settings.positionVariable && !settings.vorx2; }
+
+  function setActive(group, el){
+    [...group.children].forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+  }
+  function bindGroup(group, fn){
+    group.addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip');
+      if(!chip) return;
+      setActive(group, chip);
+      fn(chip);
+      updateNotes();
+    });
+  }
+
+  function formatTime(s){
+    const m = Math.floor(s/60).toString().padStart(2,'0');
+    const sec = Math.floor(s%60).toString().padStart(2,'0');
+    return m + ':' + sec;
+  }
+  function formatDuration(s){
+    const m = Math.floor(s / 60), sec = Math.round(s % 60);
+    if(m === 0) return sec + ' s';
+    return sec ? m + ' min ' + sec + ' s' : m + ' min';
+  }
+
+  function updateNotes(){
+    const iv = effectiveInterval();
+    if(settings.intervalMs > 0){
+      intervalNote.textContent = 'Le mot change toutes les ' + (iv / 1000).toString().replace('.', ',') + ' s : gardez la tête en mouvement rapide.';
+    } else if(settings.stroop){
+      intervalNote.textContent = 'Avec Stroop, le mot change toutes les 3 s.';
+    } else if(positionActive()){
+      intervalNote.textContent = 'Avec une position variable, le mot change toutes les 3 s.';
+    } else {
+      intervalNote.textContent = 'Le mot reste affiché pendant toute la durée de l’exercice.';
+    }
+    positionRow.classList.toggle('is-disabled', settings.vorx2);
+    positionNote.textContent = settings.vorx2
+      ? 'Indisponible avec VORx2 : le mot se déplace déjà avec votre tête.'
+      : 'Le mot apparaît à différents endroits de l’écran.';
+    instructionEl.textContent = instructionText();
+  }
+
+  function instructionText(){
+    let t = settings.axis === 'h'
+      ? 'Tournez la tête de gauche à droite, à bonne vitesse, en gardant le mot net.'
+      : 'Bougez la tête de haut en bas, à bonne vitesse, en gardant le mot net.';
+    if(settings.vorx2) t += ' Le mot se déplace dans le sens opposé à votre tête.';
+    if(settings.stroop) t += ' Nommez à voix haute la couleur de l’encre, pas le mot.';
+    return t;
+  }
+
+  /* ---------- Réglages : événements ---------- */
+  let totalDuration = 30;
+  let running = false;
+  let remaining = totalDuration;
+
+  durationGroup.addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if(!chip) return;
+    setActive(durationGroup, chip);
+    if(chip.dataset.sec === 'custom'){
+      customRow.style.display = 'flex';
+      totalDuration = Math.max(1, (parseInt(customMinutes.value||0, 10)*60) + parseInt(customSeconds.value||0, 10));
+    } else {
+      customRow.style.display = 'none';
+      totalDuration = parseInt(chip.dataset.sec, 10);
+    }
+    remaining = totalDuration;
+    timeLeftEl.textContent = formatTime(remaining);
+  });
+  [customMinutes, customSeconds].forEach(inp => {
+    inp.addEventListener('input', () => {
+      totalDuration = Math.max(1, (parseInt(customMinutes.value||0, 10)*60) + parseInt(customSeconds.value||0, 10));
+      remaining = totalDuration;
+      timeLeftEl.textContent = formatTime(remaining);
+    });
+  });
+
+  bindGroup($('axisGroup'), (chip) => { settings.axis = chip.dataset.axis; });
+  bindGroup($('themeGroup'), (chip) => { settings.theme = chip.dataset.theme; });
+  bindGroup($('intervalGroup'), (chip) => { settings.intervalMs = parseInt(chip.dataset.ms, 10); });
+  bindGroup($('positionGroup'), (chip) => { settings.positionVariable = chip.dataset.pos === 'variable'; });
+  bindGroup($('oknGroup'), (chip) => { settings.okn = chip.dataset.okn; });
+  bindGroup($('stroopGroup'), (chip) => { settings.stroop = chip.dataset.stroop === 'on'; });
+
+  /* ---------- Mot affiché ---------- */
+  let wordTimer = null;
+  let tickTimer = null;
+  let wordsShown = 0;
+  let lastWord = null;
+  let lastInk = null;
+  let fx = 0.5, fy = 0.5;       // position du centre du mot, en fraction de l'écran
+  let offX = 0, offY = 0;       // décalage VORx2, en pixels
+
+  function pickWord(){
+    const list = settings.stroop ? STROOP.map(c => c.name) : WORDS;
+    const choices = list.filter(w => w !== lastWord);
+    const w = choices[Math.floor(Math.random() * choices.length)];
+    lastWord = w;
+    return w;
+  }
+
+  function pickInk(word){
+    let choices = STROOP.filter(c => c.name !== word && c.name !== lastInk);
+    if(!choices.length) choices = STROOP.filter(c => c.name !== word);
+    const c = choices[Math.floor(Math.random() * choices.length)];
+    lastInk = c.name;
+    return c[settings.theme] || c.light;
+  }
+
+  function viewport(){
+    return { W: window.innerWidth || document.documentElement.clientWidth || 1, H: window.innerHeight || document.documentElement.clientHeight || 1 };
+  }
+  function margin(W, H){ return Math.round(Math.min(W, H) * 0.04) + 8; }
+
+  function chooseBasePosition(){
+    if(!positionActive()){ fx = 0.5; fy = 0.5; return; }
+    const { W, H } = viewport();
+    const w = target.offsetWidth || 200, h = target.offsetHeight || 100, m = margin(W, H);
+    const minX = (w / 2 + m) / W, maxX = 1 - minX;
+    const minY = (h / 2 + m) / H, maxY = 1 - minY;
+    let nx = 0.5, ny = 0.5;
+    for(let i = 0; i < 8; i++){
+      nx = minX < maxX ? minX + Math.random() * (maxX - minX) : 0.5;
+      ny = minY < maxY ? minY + Math.random() * (maxY - minY) : 0.5;
+      const dist = Math.hypot((nx - fx) * W, (ny - fy) * H);
+      if(dist > 0.25 * Math.min(W, H)) break;
+    }
+    fx = nx; fy = ny;
+  }
+
+  function applyPosition(){
+    const { W, H } = viewport();
+    target.style.left = (fx * W).toFixed(1) + 'px';
+    target.style.top = (fy * H).toFixed(1) + 'px';
+    target.style.transform = 'translate(-50%, -50%) translate(' + offX.toFixed(1) + 'px, ' + offY.toFixed(1) + 'px)';
+  }
+
+  function showWord(){
+    const word = pickWord();
+    target.textContent = word;
+    const colors = THEME_COLORS[settings.theme] || THEME_COLORS.light;
+    target.style.color = settings.stroop ? pickInk(word) : colors.fg;
+    chooseBasePosition();
+    applyPosition();
+    target.style.visibility = 'visible';
+    wordsShown++;
+    wordCountEl.textContent = wordsShown;
+  }
+
+  function scheduleNextWord(){
+    clearTimeout(wordTimer);
+    const iv = effectiveInterval();
+    if(iv <= 0) return;
+    wordTimer = setTimeout(() => {
+      showWord();
+      scheduleNextWord();
+    }, iv);
+  }
+
+  /* ---------- Déroulement ---------- */
+  function tick(){
+    remaining -= 0.1;
+    if(remaining <= 0){
+      finish();
+      return;
+    }
+    timeLeftEl.textContent = formatTime(remaining);
+    ringProgress.style.strokeDashoffset = (CIRC * (1 - remaining / totalDuration)).toFixed(1);
+  }
+
+  function setupBackground(){
+    const colors = THEME_COLORS[settings.theme] || THEME_COLORS.light;
+    fullscreenStage.style.backgroundColor = colors.bg;
+    oknEl.className = 'okn';
+    if(settings.okn !== 'off'){
+      oknEl.style.setProperty('--okn-color', colors.okn);
+      oknEl.style.setProperty('--okn-dur', (OKN_PERIOD / OKN_SPEEDS[settings.okn]).toFixed(3) + 's');
+      oknEl.classList.add(settings.axis === 'h' ? 'h' : 'v');
+    }
+  }
+
+  function start(){
+    if(totalDuration <= 0) return;
+    if(settings.vorx2 && !cameraReady){
+      doneBanner.textContent = 'La caméra n’est pas encore prête.';
+      return;
+    }
+    running = true;
+    remaining = totalDuration;
+    wordsShown = 0;
+    lastWord = null;
+    lastInk = null;
+    fx = 0.5; fy = 0.5; offX = 0; offY = 0;
+    wordCountEl.textContent = '0';
+    doneBanner.textContent = '';
+    timeLeftEl.textContent = formatTime(remaining);
+    ringProgress.style.strokeDashoffset = '0';
+    config.classList.add('disabled');
+    setupBackground();
+    target.style.visibility = 'hidden';
+    fullscreenStage.classList.add('active');
+    if(settings.vorx2){
+      phase = 'calibrating';
+      calibSamples = [];
+      baseline = null;
+      calibTimer = setTimeout(abortCalibration, CALIB_TIMEOUT_MS);
+    } else {
+      beginExercise();
+    }
+  }
+
+  function beginExercise(){
+    phase = 'running';
+    tickTimer = setInterval(tick, 100);
+    showWord();
+    scheduleNextWord();
+  }
+
+  function endCommon(){
+    clearInterval(tickTimer);
+    clearTimeout(wordTimer);
+    resetPhase();
+    running = false;
+    config.classList.remove('disabled');
+    fullscreenStage.classList.remove('active');
+    target.style.visibility = 'hidden';
+  }
+
+  function stop(silent){
+    endCommon();
+    idleLabel.textContent = 'Prêt';
+    ringProgress.style.strokeDashoffset = '0';
+    timeLeftEl.textContent = formatTime(totalDuration);
+    if(!silent) doneBanner.textContent = '';
+  }
+
+  function finish(){
+    endCommon();
+    idleLabel.textContent = 'Rejouer';
+    timeLeftEl.textContent = '00:00';
+    ringProgress.style.strokeDashoffset = CIRC.toFixed(1);
+    let summary = 'Terminé — ' + formatDuration(totalDuration) + ' d’exercice';
+    if(wordsShown > 1) summary += ' · ' + wordsShown + ' mots affichés';
+    doneBanner.textContent = summary;
+  }
+
+  /* ---------- VORx2 : caméra ---------- */
+  const vorGroup = $('vorGroup');
+  const camBlock = $('camBlock');
+  const camVideo = $('camVideo');
+  const camStatus = $('camStatus');
+
+  const MP_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+  const MP_MODEL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+
+  const CALIB_FRAMES = 15;
+  const CALIB_TIMEOUT_MS = 6000;
+  const YAW_FULL = 0.24;     // rapport nez/largeur du visage correspondant à ~90°
+  const PITCH_FULL = 0.18;   // rapport nez/hauteur du visage correspondant à ~90°
+  const SMOOTHING = 0.6;
+  const DIST_FACTOR = 1.75;  // distance virtuelle de l'écran, en multiple de sa plus grande dimension
+
+  let cameraReady = false;
+  let cameraStream = null;
+  let landmarker = null;
+  let landmarkerPromise = null;
+  let detectLoopId = null;
+  let lastVideoTime = -1;
+  let faceVisible = null;
+  let camToken = 0;
+
+  let phase = 'idle'; // idle | calibrating | running
+  let baseline = null;
+  let calibSamples = [];
+  let calibTimer = null;
+
+  function setCamStatus(text, cls){
+    camStatus.textContent = text;
+    camStatus.className = 'cam-status' + (cls ? ' ' + cls : '');
+  }
+
+  function cameraErrorMessage(err){
+    const name = err && err.name;
+    if(name === 'NotAllowedError' || name === 'SecurityError') return 'Accès à la caméra refusé. Autorisez-le dans le navigateur puis réessayez.';
+    if(name === 'NotFoundError' || name === 'OverconstrainedError') return 'Aucune caméra détectée.';
+    if(name === 'NotReadableError') return 'La caméra est utilisée par une autre application.';
+    return 'Impossible de démarrer la caméra (' + ((err && err.message) || 'erreur inconnue') + ').';
+  }
+
+  function loadLandmarker(){
+    if(landmarker) return Promise.resolve(landmarker);
+    if(landmarkerPromise) return landmarkerPromise;
+    landmarkerPromise = (async () => {
+      const { FaceLandmarker, FilesetResolver } = await import(MP_BASE + '/vision_bundle.mjs');
+      const fileset = await FilesetResolver.forVisionTasks(MP_BASE + '/wasm');
+      const make = (delegate) => FaceLandmarker.createFromOptions(fileset, {
+        baseOptions: { modelAssetPath: MP_MODEL, delegate },
+        runningMode: 'VIDEO',
+        numFaces: 1
+      });
+      try {
+        landmarker = await make('GPU');
+      } catch(e) {
+        landmarker = await make('CPU');
+      }
+      return landmarker;
+    })().catch((e) => { landmarkerPromise = null; throw e; });
+    return landmarkerPromise;
+  }
+
+  // yaw > 0 = tête tournée vers la droite de l'utilisateur ; pitch > 0 = tête baissée
+  function computePose(lm){
+    const nose = lm[1], left = lm[234], right = lm[454], top = lm[10], chin = lm[152];
+    if(!nose || !left || !right || !top || !chin) return null;
+    const w = Math.abs(right.x - left.x);
+    const h = Math.abs(chin.y - top.y);
+    if(w < 0.02 || h < 0.02) return null;
+    const midX = (left.x + right.x) / 2;
+    const midY = (top.y + chin.y) / 2;
+    return { yaw: -(nose.x - midX) / w, pitch: (nose.y - midY) / h };
+  }
+
+  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+
+  function resetPhase(){
+    clearTimeout(calibTimer);
+    phase = 'idle';
+  }
+
+  function abortCalibration(){
+    if(phase !== 'calibrating') return;
+    stop(true);
+    doneBanner.textContent = 'Visage non détecté : placez-vous face à la caméra puis réessayez.';
+  }
+
+  // Le mot (centré) se déplace à l'opposé de la tête, comme si l'écran était à une distance fixe.
+  function updateVorOffset(pose){
+    const { W, H } = viewport();
+    const w = target.offsetWidth || 0, h = target.offsetHeight || 0, m = margin(W, H);
+    const D = DIST_FACTOR * Math.max(W, H);
+    let tx = 0, ty = 0;
+    if(settings.axis === 'h'){
+      const a = Math.asin(clamp((pose.yaw - baseline.yaw) / YAW_FULL, -1, 1));
+      tx = -D * Math.tan(a);
+    } else {
+      const a = Math.asin(clamp((pose.pitch - baseline.pitch) / PITCH_FULL, -1, 1));
+      ty = -D * Math.tan(a);
+    }
+    const maxX = Math.max(0, W / 2 - w / 2 - m);
+    const maxY = Math.max(0, H / 2 - h / 2 - m);
+    tx = clamp(tx, -maxX, maxX);
+    ty = clamp(ty, -maxY, maxY);
+    offX += (tx - offX) * SMOOTHING;
+    offY += (ty - offY) * SMOOTHING;
+    applyPosition();
+  }
+
+  function handlePose(pose){
+    if(phase === 'calibrating'){
+      calibSamples.push(pose);
+      if(calibSamples.length >= CALIB_FRAMES){
+        baseline = {
+          yaw: calibSamples.reduce((s, p) => s + p.yaw, 0) / calibSamples.length,
+          pitch: calibSamples.reduce((s, p) => s + p.pitch, 0) / calibSamples.length
+        };
+        clearTimeout(calibTimer);
+        beginExercise();
+      }
+      return;
+    }
+    if(phase === 'running' && settings.vorx2 && baseline) updateVorOffset(pose);
+  }
+
+  function updateFaceStatus(visible){
+    if(!cameraReady || visible === faceVisible) return;
+    faceVisible = visible;
+    setCamStatus(
+      visible ? 'Caméra prête — visage détecté' : 'Caméra prête — aucun visage détecté',
+      visible ? 'ok' : 'err'
+    );
+  }
+
+  function detectLoop(){
+    detectLoopId = requestAnimationFrame(detectLoop);
+    if(!landmarker || camVideo.readyState < 2 || camVideo.currentTime === lastVideoTime) return;
+    lastVideoTime = camVideo.currentTime;
+    let result;
+    try {
+      result = landmarker.detectForVideo(camVideo, performance.now());
+    } catch(e) {
+      return;
+    }
+    const lm = result && result.faceLandmarks && result.faceLandmarks[0];
+    const pose = lm ? computePose(lm) : null;
+    updateFaceStatus(!!pose);
+    if(pose) handlePose(pose);
+  }
+
+  function revertVor(){
+    settings.vorx2 = false;
+    camBlock.classList.remove('visible');
+    setActive(vorGroup, vorGroup.querySelector('[data-vor="off"]'));
+    updateNotes();
+  }
+
+  async function enableCamera(){
+    const token = ++camToken;
+    setCamStatus('Demande d’accès à la caméra…');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+        audio: false
+      });
+      if(token !== camToken){
+        stream.getTracks().forEach(t => t.stop());
+        return;
+      }
+      cameraStream = stream;
+      camVideo.srcObject = stream;
+      await camVideo.play();
+      setCamStatus('Chargement du modèle de détection…');
+      await loadLandmarker();
+      if(token !== camToken) return;
+      cameraReady = true;
+      faceVisible = null;
+      lastVideoTime = -1;
+      setCamStatus('Caméra prête — recherche du visage…');
+      detectLoop();
+    } catch(err) {
+      if(token !== camToken) return;
+      disableCamera();
+      revertVor();
+      doneBanner.textContent = cameraErrorMessage(err);
+    }
+  }
+
+  function disableCamera(){
+    camToken++;
+    if(detectLoopId !== null) cancelAnimationFrame(detectLoopId);
+    detectLoopId = null;
+    if(cameraStream){
+      cameraStream.getTracks().forEach(t => t.stop());
+      cameraStream = null;
+    }
+    camVideo.srcObject = null;
+    cameraReady = false;
+    faceVisible = null;
+  }
+
+  vorGroup.addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if(!chip) return;
+    setActive(vorGroup, chip);
+    if(chip.dataset.vor === 'on'){
+      if(settings.vorx2) return;
+      settings.vorx2 = true;
+      doneBanner.textContent = '';
+      camBlock.classList.add('visible');
+      enableCamera();
+    } else {
+      settings.vorx2 = false;
+      camBlock.classList.remove('visible');
+      disableCamera();
+    }
+    updateNotes();
+  });
+
+  /* ---------- Commandes ---------- */
+  startBtn.addEventListener('click', () => {
+    if(running) stop(true); else start();
+  });
+  fullscreenStage.addEventListener('click', () => {
+    if(running) stop(true);
+  });
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape' && running) stop(true);
+  });
+  window.addEventListener('resize', () => {
+    if(running && phase === 'running') applyPosition();
+  });
+
+  updateNotes();
+})();
+</script>
+</body>
+</html>
