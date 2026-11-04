@@ -16,10 +16,10 @@
     --text:#E8EDF5;
     --text-dim:#7C8AA5;
     --ring-track:#1C2A42;
-    --ring:clamp(180px, min(68vw, 30vh), 320px);
+    --ring:clamp(180px, min(64vw, 28vh), 320px);
   }
   @supports (height:1dvh){
-    :root{ --ring:clamp(180px, min(68vw, 30dvh), 320px); }
+    :root{ --ring:clamp(180px, min(64vw, 28dvh), 320px); }
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{
@@ -150,13 +150,24 @@
     position:relative;
     width:71.4%;
     height:71.4%;
+    border:none;
     border-radius:50%;
-    background:var(--bg-alt);
+    background:var(--amber);
+    color:#241500;
+    font:inherit;
     display:flex;
+    flex-direction:column;
     align-items:center;
     justify-content:center;
-    overflow:hidden;
+    gap:6px;
+    cursor:pointer;
+    box-shadow:0 12px 32px rgba(0,0,0,0.35);
+    transition:transform .1s ease, filter .15s ease;
+    -webkit-tap-highlight-color:transparent;
   }
+  .arrow-wrap:hover{ filter:brightness(1.08); }
+  .arrow-wrap:active{ transform:scale(0.97); }
+  .arrow-wrap:focus-visible{ outline:3px solid var(--teal); outline-offset:6px; }
   .arrow{
     width:0; height:0;
     border-style:solid;
@@ -176,11 +187,19 @@
   }
   .idle-label{
     font-family:'Space Grotesk',sans-serif;
-    font-size:14px;
+    font-size:clamp(18px, calc(var(--ring) * 0.09), 28px);
     font-weight:700;
-    color:var(--text-dim);
-    letter-spacing:0.05em;
+    letter-spacing:0.06em;
     text-transform:uppercase;
+    color:#241500;
+  }
+  .start-hint{
+    font-size:clamp(10px, calc(var(--ring) * 0.045), 13px);
+    font-weight:600;
+    line-height:1.3;
+    max-width:80%;
+    text-align:center;
+    color:rgba(36,21,0,0.7);
   }
   @keyframes pulse{ 0%{ transform:scale(.82); opacity:.4; } 100%{ transform:scale(1); opacity:1; } }
 
@@ -313,21 +332,14 @@
 
   /* --- Mise en page adaptative --- */
   .col-stage{ display:flex; flex-direction:column; align-items:center; }
-  .col-stage .primary-btn,
   .col-stage .hint,
   .col-stage .done-banner{ width:100%; max-width:440px; }
-  .col-stage .primary-btn{
-    position:sticky;
-    bottom:max(12px, env(safe-area-inset-bottom));
-    z-index:5;
-    box-shadow:0 10px 28px rgba(0,0,0,0.4);
-  }
 
   /* Écran large en paysage (iPad, ordinateur) : config à gauche, exercice à droite */
   @media (min-width:820px) and (orientation:landscape){
-    :root{ --ring:clamp(200px, min(40vw, calc(100vh - 270px)), 440px); }
+    :root{ --ring:clamp(200px, min(40vw, calc(100vh - 230px)), 440px); }
     @supports (height:1dvh){
-      :root{ --ring:clamp(200px, min(40vw, calc(100dvh - 270px)), 440px); }
+      :root{ --ring:clamp(200px, min(40vw, calc(100dvh - 230px)), 440px); }
     }
     .app{
       max-width:1040px;
@@ -352,10 +364,6 @@
     .config{ padding:14px 14px 10px; }
     .config-row{ margin-bottom:10px; }
     .stats{ margin-bottom:12px; }
-  }
-  /* Grand écran en paysage assez haut (iPad, ordinateur) : tout tient, le bouton reste à sa place */
-  @media (min-width:820px) and (orientation:landscape) and (min-height:560px){
-    .col-stage .primary-btn{ position:static; box-shadow:none; }
   }
 </style>
 </head>
@@ -433,10 +441,10 @@
         <circle class="ring-progress" id="ringProgress" cx="140" cy="140" r="130"
                 stroke-dasharray="816.8" stroke-dashoffset="0"></circle>
       </svg>
-      <div class="arrow-wrap">
-        <div class="idle-label" id="idleLabel">Prêt</div>
-        <div class="arrow-shape" id="arrowShape" style="display:none;"></div>
-      </div>
+      <button type="button" class="arrow-wrap" id="startBtn" aria-label="Commencer l'exercice">
+        <span class="idle-label" id="idleLabel">Prêt</span>
+        <span class="start-hint">Touchez pour commencer</span>
+      </button>
     </div>
 
     <div class="stats">
@@ -452,8 +460,7 @@
 
     <div class="done-banner" id="doneBanner"></div>
 
-    <button class="primary-btn" id="startBtn">Commencer</button>
-    <div class="hint">Cliquez sur l'écran ou appuyez sur Échap pour arrêter</div>
+    <div class="hint">Touchez « Prêt » pour commencer. Pour arrêter : cliquez sur l'écran ou appuyez sur Échap.</div>
     </div>
   </div>
 
@@ -475,7 +482,6 @@
   const timeLeftEl = document.getElementById('timeLeft');
   const arrowCountEl = document.getElementById('arrowCount');
   const idleLabel = document.getElementById('idleLabel');
-  const arrowShape = document.getElementById('arrowShape');
   const ringProgress = document.getElementById('ringProgress');
   const doneBanner = document.getElementById('doneBanner');
 
@@ -620,8 +626,6 @@
     timeLeftEl.textContent = formatTime(remaining);
     ringProgress.style.strokeDashoffset = '0';
     config.classList.add('disabled');
-    startBtn.textContent = 'Arrêter';
-    startBtn.classList.add('stop');
     const t = THEMES[theme] || THEMES.light;
     fullscreenStage.style.backgroundColor = t.bg;
     fsArrowShape.style.backgroundColor = t.arrow;
@@ -656,8 +660,7 @@
     clearTimeout(arrowTimer);
     resetCamPhase();
     config.classList.remove('disabled');
-    startBtn.textContent = 'Commencer';
-    startBtn.classList.remove('stop');
+    idleLabel.textContent = 'Prêt';
     fullscreenStage.classList.remove('active');
     ringProgress.style.strokeDashoffset = '0';
     timeLeftEl.textContent = formatTime(totalDuration);
@@ -670,8 +673,7 @@
     resetCamPhase();
     running = false;
     config.classList.remove('disabled');
-    startBtn.textContent = 'Recommencer';
-    startBtn.classList.remove('stop');
+    idleLabel.textContent = 'Rejouer';
     fullscreenStage.classList.remove('active');
     timeLeftEl.textContent = '00:00';
     ringProgress.style.strokeDashoffset = CIRC.toFixed(1);
