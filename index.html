@@ -8,21 +8,23 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0B1220;
-    --bg-alt:#0F1B2E;
-    --panel:#111C2E;
-    --amber:#FFB627;
-    --teal:#00D9C0;
-    --text:#E8EDF5;
-    --text-dim:#7C8AA5;
+    --bg:#0A1424;
+    --bg-alt:#0C1729;
+    --panel:#111E34;
+    --border:#23344E;
+    --border-strong:#2C4160;
+    --teal:#4FD1C5;
+    --warm:#F2C27A;
+    --text:#E9EEF7;
+    --text-dim:#8795B0;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{
     min-height:100vh;
     min-height:100dvh;
     background:
-      radial-gradient(circle at 15% 10%, rgba(0,217,192,0.08), transparent 40%),
-      radial-gradient(circle at 85% 90%, rgba(255,182,39,0.07), transparent 40%),
+      radial-gradient(circle at 15% 10%, rgba(79,209,197,0.10), transparent 42%),
+      radial-gradient(circle at 85% 90%, rgba(108,140,255,0.09), transparent 42%),
       var(--bg);
     color:var(--text);
     font-family:'Inter',sans-serif;
@@ -81,14 +83,14 @@
     align-items:center;
     gap:16px;
     background:var(--panel);
-    border:1px solid #1C2A42;
+    border:1px solid var(--border);
     border-radius:16px;
     padding:18px;
     color:inherit;
     text-decoration:none;
     transition:border-color .15s ease, background .15s ease, transform .1s ease;
   }
-  a.card:hover{ border-color:var(--teal); background:#132238; }
+  a.card:hover{ border-color:var(--teal); background:#14233B; }
   a.card:active{ transform:scale(0.99); }
   a.card:focus-visible{ outline:2px solid var(--teal); outline-offset:2px; }
 
@@ -98,12 +100,12 @@
     height:56px;
     border-radius:14px;
     background:var(--bg-alt);
-    border:1px solid #223350;
+    border:1px solid var(--border-strong);
     display:flex;
     align-items:center;
     justify-content:center;
   }
-  .card-icon svg{ width:26px; height:26px; fill:var(--amber); }
+  .card-icon svg{ width:26px; height:26px; fill:var(--warm); }
 
   .card-body{ flex:1; min-width:0; }
   .card-title{
@@ -126,7 +128,7 @@
     padding:4px 9px;
     border-radius:999px;
     background:var(--bg-alt);
-    border:1px solid #223350;
+    border:1px solid var(--border-strong);
     color:var(--text-dim);
   }
   .card-go{
