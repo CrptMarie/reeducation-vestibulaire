@@ -471,6 +471,12 @@
           <div class="chip" data-okn="mid">Moyen</div>
           <div class="chip" data-okn="fast">Rapide</div>
         </div>
+        <span class="config-label" style="margin-top:10px">Sens de défilement</span>
+        <div class="btn-group three-col" id="oknDirGroup">
+          <div class="chip active" data-dir="auto">Selon la tête</div>
+          <div class="chip" data-dir="h">Gauche – droite</div>
+          <div class="chip" data-dir="v">Haut – bas</div>
+        </div>
         <div class="field-note">Des bandes défilent derrière le mot : utile en cas de sensibilité au mouvement visuel (supermarché, foule).</div>
       </div>
 
@@ -569,14 +575,15 @@
     intervalMs: 0,        // 0 = mot fixe
     positionVariable: false,
     okn: 'off',           // off | slow | mid | fast
+    oknDir: 'auto',       // auto (selon la tête) | h | v
     vorx2: false,
     stroop: false,
     theme: 'light'
   };
 
   const THEME_COLORS = {
-    light: { bg: '#FFFFFF', fg: '#000000', okn: 'rgba(0,0,0,0.13)' },
-    dark:  { bg: '#000000', fg: '#FFFFFF', okn: 'rgba(255,255,255,0.17)' }
+    light: { bg: '#FFFFFF', fg: '#000000', okn: 'rgba(0,0,0,0.32)' },
+    dark:  { bg: '#000000', fg: '#FFFFFF', okn: 'rgba(255,255,255,0.30)' }
   };
   const OKN_SPEEDS = { slow: 60, mid: 150, fast: 280 };   // pixels par seconde
   const OKN_PERIOD = 120;                                 // pixels (doit correspondre au CSS)
@@ -682,6 +689,7 @@
   bindGroup($('intervalGroup'), (chip) => { settings.intervalMs = parseInt(chip.dataset.ms, 10); });
   bindGroup($('positionGroup'), (chip) => { settings.positionVariable = chip.dataset.pos === 'variable'; });
   bindGroup($('oknGroup'), (chip) => { settings.okn = chip.dataset.okn; });
+  bindGroup($('oknDirGroup'), (chip) => { settings.oknDir = chip.dataset.dir; });
   bindGroup($('stroopGroup'), (chip) => { settings.stroop = chip.dataset.stroop === 'on'; });
 
   /* ---------- Mot affiché ---------- */
@@ -777,7 +785,8 @@
     if(settings.okn !== 'off'){
       oknEl.style.setProperty('--okn-color', colors.okn);
       oknEl.style.setProperty('--okn-dur', (OKN_PERIOD / OKN_SPEEDS[settings.okn]).toFixed(3) + 's');
-      oknEl.classList.add(settings.axis === 'h' ? 'h' : 'v');
+      const dir = settings.oknDir === 'auto' ? settings.axis : settings.oknDir;
+      oknEl.classList.add(dir === 'v' ? 'v' : 'h');
     }
   }
 
