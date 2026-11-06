@@ -269,6 +269,12 @@
     pointer-events:none;
   }
 
+  .target-dot.top{
+    bottom:auto;
+    top:max(4vh, calc(env(safe-area-inset-top) + 14px));
+  }
+  .target-dot.none{ display:none; }
+
   /* --- Détection caméra --- */
   .btn-group.three-col{ grid-template-columns:repeat(3,1fr); }
   .cam-block{ display:none; margin-top:10px; }
@@ -390,6 +396,15 @@
       </div>
 
       <div class="config-row">
+        <span class="config-label">Point rouge (cible)</span>
+        <div class="btn-group three-col" id="dotGroup">
+          <div class="chip active" data-dot="bottom">En bas</div>
+          <div class="chip" data-dot="top">En haut</div>
+          <div class="chip" data-dot="none">Aucun</div>
+        </div>
+      </div>
+
+      <div class="config-row">
         <span class="config-label">Détection caméra</span>
         <div class="btn-group two-col" id="camGroup">
           <div class="chip active" data-cam="off">Désactivée</div>
@@ -448,7 +463,7 @@
     <div class="fs-arrow-wrap" id="fsArrowWrap">
       <div class="fs-arrow-shape" id="fsArrowShape"></div>
     </div>
-    <div class="target-dot" aria-hidden="true"></div>
+    <div class="target-dot" id="targetDot" aria-hidden="true"></div>
   </div>
 
 <script>
@@ -473,6 +488,16 @@
 
   const CIRC = 2 * Math.PI * 130;
   ringProgress.setAttribute('stroke-dasharray', CIRC.toFixed(1));
+
+  const targetDot = document.getElementById('targetDot');
+  const dotGroup = document.getElementById('dotGroup');
+  let dotPos = 'bottom';
+  dotGroup.addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if(!chip) return;
+    setActive(dotGroup, chip);
+    dotPos = chip.dataset.dot;
+  });
 
   let theme = 'light';
   themeGroup.addEventListener('click', (e) => {
@@ -611,6 +636,7 @@
     fullscreenStage.style.backgroundColor = t.bg;
     fsArrowShape.style.backgroundColor = t.arrow;
     fsArrowWrap.style.visibility = 'hidden';
+    targetDot.className = 'target-dot' + (dotPos === 'bottom' ? '' : ' ' + dotPos);
     fullscreenStage.classList.add('active');
     if(cameraEnabled){
       // Calibrage : on mesure la position de tête « neutre » avant la première flèche
