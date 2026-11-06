@@ -256,6 +256,19 @@
     clip-path:polygon(50% 0%, 20% 45%, 42% 45%, 42% 100%, 58% 100%, 58% 45%, 80% 45%);
   }
 
+  /* Point rouge servant de cible, en bas au centre de l'écran */
+  .target-dot{
+    position:absolute;
+    left:50%;
+    bottom:max(4vh, calc(env(safe-area-inset-bottom) + 14px));
+    width:clamp(16px, 3.2vmin, 32px);
+    height:clamp(16px, 3.2vmin, 32px);
+    transform:translateX(-50%);
+    border-radius:50%;
+    background:#E53935;
+    pointer-events:none;
+  }
+
   /* --- Détection caméra --- */
   .btn-group.three-col{ grid-template-columns:repeat(3,1fr); }
   .cam-block{ display:none; margin-top:10px; }
@@ -435,6 +448,7 @@
     <div class="fs-arrow-wrap" id="fsArrowWrap">
       <div class="fs-arrow-shape" id="fsArrowShape"></div>
     </div>
+    <div class="target-dot" aria-hidden="true"></div>
   </div>
 
 <script>
