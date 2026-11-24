@@ -388,6 +388,14 @@
       </div>
 
       <div class="config-row">
+        <span class="config-label">Directions</span>
+        <div class="btn-group two-col" id="dirGroup">
+          <div class="chip active" data-dirs="8">Avec diagonales</div>
+          <div class="chip" data-dirs="4">4 directions</div>
+        </div>
+      </div>
+
+      <div class="config-row">
         <span class="config-label">Thème</span>
         <div class="btn-group two-col" id="themeGroup">
           <div class="chip active" data-theme="light">Noir sur blanc</div>
@@ -421,7 +429,7 @@
           </div>
           <div class="cam-note">
             Placez-vous face à l'écran, le visage bien visible. Votre position de départ est calibrée au lancement (environ 1 seconde) : regardez droit devant.
-            La flèche change dès que le mouvement est détecté, ou après 6 secondes sans mouvement. La cadence n'est utilisée que sans caméra.
+            Pour une diagonale, combinez rotation et inclinaison de la tête. La flèche change dès que le mouvement est détecté, ou après 6 secondes sans mouvement. La cadence n'est utilisée que sans caméra.
             L'analyse se fait dans votre navigateur, aucune image n'est envoyée.
           </div>
         </div>
@@ -523,10 +531,23 @@
 
   const DIRECTIONS = {
     up: 0,
+    upright: 45,
     right: 90,
+    downright: 135,
     down: 180,
-    left: 270
+    downleft: 225,
+    left: 270,
+    upleft: 315
   };
+  const CARDINALS = ['up', 'right', 'down', 'left'];
+  let diagonals = true;
+  const dirGroup = document.getElementById('dirGroup');
+  dirGroup.addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if(!chip) return;
+    setActive(dirGroup, chip);
+    diagonals = chip.dataset.dirs === '8';
+  });
 
   function formatTime(s){
     const m = Math.floor(s/60).toString().padStart(2,'0');
@@ -571,7 +592,7 @@
   });
 
   function randomDirection(avoidRepeat){
-    let keys = Object.keys(DIRECTIONS);
+    let keys = diagonals ? Object.keys(DIRECTIONS) : CARDINALS;
     if(avoidRepeat && lastDirection) keys = keys.filter(k => k !== lastDirection);
     const choice = keys[Math.floor(Math.random()*keys.length)];
     lastDirection = choice;
@@ -800,9 +821,13 @@
   function detectDirection(pose){
     const { nx, ny } = normalizedDelta(pose);
     const ax = Math.abs(nx), ay = Math.abs(ny);
-    if(Math.max(ax, ay) < 1) return null;
-    if(ax >= ay) return nx > 0 ? 'right' : 'left';
-    return ny > 0 ? 'down' : 'up';
+    const mx = Math.max(ax, ay);
+    if(mx < 1) return null;
+    const vert = ny > 0 ? 'down' : 'up';
+    const horiz = nx > 0 ? 'right' : 'left';
+    // Diagonale : les deux composantes sont assez marquées (la plus faible ≥ moitié de la plus forte)
+    if(diagonals && Math.min(ax, ay) >= 0.5 * mx) return vert + horiz;
+    return ax >= ay ? horiz : vert;
   }
 
   function resetCamPhase(){
